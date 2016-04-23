@@ -264,13 +264,13 @@ public class SodaImporterTest extends TestBase
 
         //Set license
         loadView.setLicenseId("CC_30_BY_NC");
-        loadView.setLicense(new License("Creative Commons Attribution-Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"));
+        loadView.setLicense(new License("Creative Commons Attribution | Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"));
         loadView.setAttribution("Socrata Test");
         loadView.setAttributionLink("https://www.socrata.com");
 
         //Set Metadata
         loadView.setMetadata(new Metadata(ImmutableMap.<String, Map<String, String>>of("geostuff", ImmutableMap.<String, String>of("stuff", "bax")),
-                                                                          "col1", null, null, null));
+                                                                          "col1", null, null, null, null));
         loadView.setRowIdentifierColumnId(loadView.getColumns().get(0).getId());
 
         loadView.setCategory("Fun");
@@ -356,7 +356,7 @@ public class SodaImporterTest extends TestBase
 
         //
         //  Test using assets for attachement
-        final Metadata    metadata = new Metadata(null, null, null, null, Lists.newArrayList(new Attachment(response.getId(), response.getNameForOutput(), response.getNameForOutput())));
+        final Metadata    metadata = new Metadata(null, null, null, null, null, Lists.newArrayList(new Attachment(response.getId(), response.getNameForOutput(), response.getNameForOutput())));
         final Dataset loadView = (Dataset) importer.loadDatasetInfo(createdView.getId());
         loadView.setMetadata(metadata);
         importer.updateDatasetInfo(loadView);
@@ -451,7 +451,7 @@ public class SodaImporterTest extends TestBase
             final NonDataFileDatasetBuilder nonDataFileDatasetBuilder = new NonDataFileDatasetBuilder(fileDatasetLoaded)
                     .addTag("TestFile")
                     .setLicenseId("CC_30_BY_NC")
-                    .setLicense(new License("Creative Commons Attribution-Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"))
+                    .setLicense(new License("Creative Commons Attribution | Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"))
                     .setAttribution("Socrata Test")
                     .setAttributionLink("https://www.socrata.com");
 
@@ -518,7 +518,7 @@ public class SodaImporterTest extends TestBase
             final ExternalDatasetBuilder externalDatasetBuilder = new ExternalDatasetBuilder(fileDatasetLoaded)
                     .addTag("TestFile")
                     .setLicenseId("CC_30_BY_NC")
-                    .setLicense(new License("Creative Commons Attribution-Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"))
+                    .setLicense(new License("Creative Commons Attribution | Noncommercial 3.0 Unported", "images/licenses/cc30bync.png", "http://creativecommons.org/licenses/by-nc/3.0/legalcode"))
                     .setAttribution("Socrata Test")
                     .setAttributionLink("https://www.socrata.com");
 
@@ -728,6 +728,46 @@ public class SodaImporterTest extends TestBase
         } finally {
             importer.deleteDataset(dataset.getId());
         }
+    }
+
+    @Test
+    public void testAsyncImports() throws LongRunningQueryException, SodaError, InterruptedException, IOException
+    {
+        final String name = "Name" + UUID.randomUUID();
+
+        final HttpLowLevel connection = connect();
+        final SodaImporter importer = new SodaImporter(connection);
+        final Soda2Consumer consumer = new Soda2Consumer(connection);
+
+        final Dataset view = new Dataset();
+        view.setName(name);
+        view.setColumns(new ArrayList<Column>());
+        view.setFlags(new ArrayList<String>());
+
+        ScanResults scanResults = importer.scan(BABY_NAMES_LOC_3);
+
+        final Blueprint blueprint = new BlueprintBuilder()
+                .setName(name)
+                .setDescription("Test async imports")
+                .setSkip(1)
+                .addColumn(new BlueprintColumn("first_name", "First Name", "Text"))
+                .addColumn(new BlueprintColumn("county",    "County",       "Text"))
+                .build();
+
+
+        final String[] translation = new String[] {"col1", "col2"};
+        DatasetInfo dataset = importer.importScanResults(blueprint, translation, BABY_NAMES_LOC_3, scanResults, true);
+
+        List results = consumer.query(dataset.getId(), SoqlQuery.SELECT_ALL, Soda2Consumer.HASH_RETURN_TYPE);
+        TestCase.assertEquals(results.size(), 4);
+
+        importer.append(dataset.getId(), BABY_NAMES_LOC_3, 1, translation, true);
+        results = consumer.query(dataset.getId(), SoqlQuery.SELECT_ALL, Soda2Consumer.HASH_RETURN_TYPE);
+        TestCase.assertEquals(results.size(), 8);
+
+        importer.replace(dataset.getId(), NOMINATIONS_CSV, 1, translation, true);
+        results = consumer.query(dataset.getId(), SoqlQuery.SELECT_ALL, Soda2Consumer.HASH_RETURN_TYPE);
+        TestCase.assertEquals(results.size(), 2);
     }
 
 }

@@ -1,13 +1,13 @@
 soda-java
 =========
 
-This is the Java API for the Socrata Open Data API (SODA).  You can look at the devloper site (http://dev.socrata.com/) for
+This is the Java API for the Socrata Open Data API (SODA).  You can look at the developer site (http://dev.socrata.com/) for
 a deeper discussion of the underlying protocol or the javadoc for better documentation for this library (http://socrata.github.io/soda-java/apidocs/) .
 
 The API is broken into several logical parts:
 
 * The **Producer** api provides functions to add/update/delete objects for datasets that are updated frequently, or for updates
-that are small.  The advantage of this api is that the changes do NOT requre a working copy or to use the publishing cycle
+that are small.  The advantage of this api is that the changes do NOT require a working copy or to use the publishing cycle
 at all, so there is no overhead of copying the dataset data around.
 * The **Consumer** api provides a rich, simple query language called SoQL.  SoQL is based off of SQL, and the Consumer
 api provides methods to build, execute and consume the results for these queries.
@@ -39,6 +39,11 @@ soda-java is published to Maven Central.  The dependency is
   <version>0.9.12</version>
 </dependency>
 ```
+
+Precompiled JARs
+================
+
+Pre-built JAR files are also available at <https://github.com/socrata/soda-java/releases>.
 
 Consumer
 --------
